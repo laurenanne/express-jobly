@@ -4,7 +4,7 @@ const { BadRequestError } = require("../expressError");
 // and alters the javascript to the SQl format needed for the query.
 function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   const keys = Object.keys(dataToUpdate);
-  console.log(keys);
+
   if (keys.length === 0) throw new BadRequestError("No data");
 
   // {firstName: 'Aliya', age: 32} => ['"first_name"=$1', '"age"=$2']
@@ -12,7 +12,6 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
     (colName, idx) => `"${jsToSql[colName] || colName}"=$${idx + 1}`
   );
 
-  console.log(cols);
   // returns an object with the columns being updated set equal to $1, $2 etc and an array of new values of the columns.
   // {setCols: "first_name"=$1, "last_name"=$2, values: [ 'newFirstName', 'newLastName' ]}
 
@@ -23,14 +22,21 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
 }
 
 function sqlForFilter(dataToUpdate, jsToSql) {
-  const keys = Object.keys(dataToUpdate);
-  const values = Object.values(dataToUpdate);
+  let index;
+  let keys = Object.keys(dataToUpdate);
+  let values = Object.values(dataToUpdate);
 
-  for (let value in values) {
-    if (isNaN(value)) {
-      value.toLowerCase();
+  if ("hasEquity" in dataToUpdate) {
+    if (dataToUpdate["hasEquity"] === false) {
+      index = keys.indexOf("hasEquity");
+      keys.pop("hasEquity");
+      values.splice(index, 1);
+    } else {
+      index = keys.indexOf("hasEquity");
+      values.splice(index, 1);
     }
   }
+
   const vals = values.map(function (value) {
     if (isNaN(value)) {
       value.toLowerCase();
@@ -43,9 +49,14 @@ function sqlForFilter(dataToUpdate, jsToSql) {
   if (keys.length === 0) throw new BadRequestError("No data");
 
   // {firstName: 'Aliya', age: 32} => ['first_name=$1', '"age"=$2']
-  const cols = keys.map(
-    (colName, idx) => `${jsToSql[colName] || colName} $${idx + 1}`
-  );
+  const cols = keys.map(function (colName, idx) {
+    if (colName === "hasEquity") {
+      colName = `${jsToSql[colName]}`;
+      return colName;
+    } else {
+      return `${jsToSql[colName]} $${idx + 1}`;
+    }
+  });
 
   // returns an object with the columns being updated set equal to $1, $2 etc and an array of new values of the columns.
   // {setCols: "first_name"=$1, "last_name"=$2, values: [ 'newFirstName', 'newLastName' ]}
