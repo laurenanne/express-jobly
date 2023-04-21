@@ -202,6 +202,22 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
   }
+
+  // method allowing users to apply to a job
+  static async apply(username, jobId) {
+    const result = await db.query(
+      `INSERT INTO applications
+         (username,
+          job_id)
+         VALUES ($1, $2)
+         RETURNING username, job_id AS "jobId"`,
+      [username, jobId]
+    );
+
+    const user = result.rows[0];
+
+    return user;
+  }
 }
 
 module.exports = User;
