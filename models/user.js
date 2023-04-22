@@ -103,10 +103,10 @@ class User {
   static async findAll() {
     const result = await db.query(
       `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
+                first_name AS "firstName",
+                last_name AS "lastName",
+                email,
+                is_admin AS "isAdmin"
            FROM users
            ORDER BY username`
     );
@@ -138,6 +138,15 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
+    const userApp = await db.query(
+      `SELECT username,
+              job_id AS "jobId"
+           FROM applications
+           WHERE username = $1`,
+      [username]
+    );
+
+    user.jobs = userApp.rows.map((a) => a.jobId);
     return user;
   }
 
@@ -210,13 +219,13 @@ class User {
          (username,
           job_id)
          VALUES ($1, $2)
-         RETURNING username, job_id AS "jobId"`,
+         RETURNING job_id AS "jobId"`,
       [username, jobId]
     );
 
-    const user = result.rows[0];
+    jobs = result.rows[0];
 
-    return user;
+    return jobs;
   }
 }
 
