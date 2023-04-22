@@ -51,14 +51,16 @@ router.post(
   }
 );
 
+// Allows a user to apply to a job
+
 router.post(
   "/:username/jobs/:id",
   ensureCorrectUser,
   checkForAdmin,
   async function (req, res, next) {
     try {
-      const user = await User.get(req.params.username);
-      return res.json({ user });
+      await User.apply(req.params.username, req.params.id);
+      return res.json({ applied: req.params.id });
     } catch (err) {
       return next(err);
     }
